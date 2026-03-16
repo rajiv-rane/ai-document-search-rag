@@ -1,0 +1,11 @@
+ollama
+sentence-transformers
+faiss-cpu
+pymupdf
+python-dotenv
+pydantic
+tqdm
+datasets
+huggingface_hub
+streamlit
+requests
