@@ -61,8 +61,8 @@ venv.bak/
 .streamlit/
 
 # Project specific
-dataset/
-vector_store_data/
+# dataset/
+# vector_store_data/
 
 # OS generated files
 .DS_Store
