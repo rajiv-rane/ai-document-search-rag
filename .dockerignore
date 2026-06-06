@@ -1,0 +1,23 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Git
+.git/
+.gitignore
+
+# Data & Indexes (Prevent bloating the Docker image)
+dataset/
+vector_store_data/
+scratch/
+
+# OS Files
+.DS_Store
+Thumbs.db
