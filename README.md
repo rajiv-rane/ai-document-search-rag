@@ -1,66 +1,47 @@
-# Ask Your Documents
+# AI-Powered Document Search & Chat (RAG)
 
-A production-grade, CPU-only, local RAG (Retrieval-Augmented Generation) system for querying PDF and TXT documents. Built with **Ollama**, **FAISS**, and **Sentence-Transformers**.
+A production-grade, local Retrieval-Augmented Generation (RAG) system for querying PDF and TXT documents. Built with Ollama, FAISS, and Sentence-Transformers.
 
-This project provides both a CLI interface and a modern **Streamlit** web application to easily extract grounded answers from your own document collections.
+This project provides a modern Streamlit web application to easily extract grounded answers from your document collections, featuring hybrid cloud/local deployment options, strict hallucination guardrails, and real-time ingestion deduplication.
 
-## 🎯 Project Goals & Assessment Details
+## Project Goals & Architecture
 
-The goal of this project is to build an intelligent document parsing and Q&A system that:
-- **Runs Fully Locally:** Ensuring data privacy by keeping all document intelligence on your own hardware (CPU-optimized).
-- **Prevents Hallucinations:** Using strict prompting and retrieval-based guardrails to only answer based on the provided context. If the answer isn't in the text, it admits it doesn't know.
-- **Provides Citation:** Every answer pinpoints the exact document and page number where the information was found.
+The primary objective of this project is to build an intelligent document parsing and Q&A system that:
+- **Ensures Data Privacy:** Capable of running fully locally on CPU-optimized hardware.
+- **Prevents Hallucinations:** Utilizes strict prompting, rigid relevance thresholds, and retrieval-based guardrails to answer based exclusively on the provided context.
+- **Provides Explicit Citations:** Every answer pinpoints the exact document filename and page number where the information was sourced.
 - **Demonstrates Clean Architecture:** Built with modular components (Ingestion, Retrieval, Generation, Guardrails) for maintainability and scalability.
 
-## 🏗️ Architecture
+### System Architecture Diagram
 
-```text
-[ Documents (.pdf/.txt) ] 
-           |
-           v
-[ Ingestion (Loader) ] --> [ Chunker (800 tokens) ]
-           |
-           v
-[ Sentence Transformers (all-MiniLM-L6-v2) ] --> [ Vector Store (FAISS) ]
-           |                                             |
-           +---------------------------------------------+
-                               |
-                               v
-[ User Query ] --> [ Retriever ] --> [ Guardrails (Relevance Filter) ]
-                                            |
-                                            v (Success)
-[ Ollama (phi3:mini) ] <---------------- [ Context Construction ]
-           |
-           v
-[ Grounded Answer + Citations ]
-```
+![System Architecture Diagram](architecture_diagram.png)
 
-## 🔄 Data Flow
-1. **Ingestion**: Documents are recursively scanned and loaded from the `dataset/` directory. PDFs are parsed page-by-page via PyMuPDF.
-2. **Chunking**: Text is split into 800-token chunks with a 150-token overlap to maintain context boundaries.
-3. **Embedding**: Chunks are vectorized using a local `all-MiniLM-L6-v2` model.
-4. **Storage**: Vectors and metadata are stored in a persisted FAISS index (`vector_store_data/`).
-5. **Retrieval**: User queries are embedded and matched against the index using L2 distance (cosine similarity).
-6. **Guardrails**: A relevance filter checks the similarity score; if below the configured threshold, it blocks the LLM to prevent hallucinations.
-7. **Generation**: Relevant chunks are formatted into a rigid prompt for `phi3:mini` via the local Ollama API to construct the final answer.
+## Data Flow & Features
 
-## 🚀 Setup & Installation
+1. **Ingestion & Deduplication**: Users upload documents via the Streamlit UI. The system runs a structural deduplication check against the dataset directory to prevent duplicate indexing and wasted compute. 
+2. **Chunking**: Raw text is parsed (using PyMuPDF for PDFs) and split into 800-token chunks with a 150-token overlap to maintain context boundaries.
+3. **Embedding**: Chunks are vectorized using the highly efficient `all-MiniLM-L6-v2` model.
+4. **Storage**: Vectors and metadata are stored persistently in a local FAISS index.
+5. **Retrieval**: User queries are embedded and matched against the FAISS index using L2 distance scoring.
+6. **Validation & Guardrails**: The system applies a hard cutoff similarity threshold (L2 distance > 1.25). If retrieved chunks are completely irrelevant, the LLM is bypassed entirely to save resources. A secondary relevance filter computes confidence scores.
+7. **Generation**: Relevant chunks are formatted into a rigid prompt. The system uses an OpenAI-compatible client, supporting both local execution (Ollama with `phi3:mini`) and cloud execution (Groq with `llama-3.3-70b-versatile`).
 
-### 1. Prerequisites (Ollama)
-The system relies on a local LLM to generate the final answers. 
-- Download and install [Ollama](https://ollama.com/).
-- Open your terminal and pull the small-but-mighty language model:
+## Setup & Installation
+
+### 1. Prerequisites
+You can run the system locally using Ollama or via cloud using Groq.
+- For local execution, install [Ollama](https://ollama.com/) and pull the required model:
    ```bash
    ollama pull phi3:mini
    ```
 
 ### 2. Clone & Install Dependencies
-1. Clone this repository:
+1. Clone this repository and navigate to the project root:
    ```bash
    git clone https://github.com/rajiv-rane/ask-your-docs.git
    cd ask-your-docs
    ```
-2. Create a virtual environment (optional but recommended):
+2. Create and activate a virtual environment (recommended):
    ```bash
    python -m venv venv
    # Windows:
@@ -68,43 +49,48 @@ The system relies on a local LLM to generate the final answers.
    # Linux/Mac:
    source venv/bin/activate
    ```
-3. Install the required packages:
+3. Install the required Python packages:
    ```bash
    pip install -r requirements.txt
    ```
 
-### 3. Add Your Documents
-Create a folder named `dataset` in the root directory if it doesn't exist. Place any `.pdf` or `.txt` files inside it. The system will recursively scan all subfolders.
+### 3. Configuration (Optional)
+The system defaults to Local Mode. To use Cloud Mode for faster generation, set the following environment variables before starting the application:
+```powershell
+# Windows
+$env:DEPLOYMENT_MODE="cloud"
+$env:GROQ_API_KEY="your-groq-api-key"
+```
 
-*(Optional)* You can run `python prepare_cuad.py` to attempt to download sample legal contracts for testing.
+## Usage
 
-## 🖥️ Usage
-
-### Streamlit UI (Recommended)
-Run the interactive web interface, which features a configuration sidebar, progress indicators, and grounded chat:
+Start the interactive web application:
 ```bash
 streamlit run ui/app.py
 ```
 
-### Command Line Interface (CLI)
-You can directly query your documents from the terminal. The first run will automatically detect new files and build the vector index.
-```bash
-python main.py --query "What are the common termination triggers?"
-```
-*Use the `--rebuild` flag to force a re-index if you have changed the contents of your dataset directory.*
+### Working with the Dataset
+Upload your own `.pdf` or `.txt` files directly through the Streamlit sidebar. The system will automatically chunk, embed, and index them in real-time.
 
-## 🛠️ Design Decisions
+A comprehensive sample dataset containing CUAD contracts, SEC filings, and various legal agreements is available here:
+[Dataset Google Drive Link](https://drive.google.com/drive/folders/1V_JAWu9wEn1aWxrgFi3wXdyKDFNDCYlF?usp=sharing)
 
-- **FAISS**: Chosen for its high performance and ease of local persistence. It is standard for CPU-optimized vector search.
-- **all-MiniLM-L6-v2**: A highly efficient embedding model. It provides a perfect balance of speed on CPU and semantic accuracy for document retrieval.
-- **phi3:mini**: Selected for its state-of-the-art performance in the "small model" category, making it ideal for local CPU-only RAG where reasoning is required but resources are limited.
-- **Chunk Size (800)**: Carefully balanced to provide enough context for complex legal/technical queries while ensuring multiple chunks fit comfortably within the LLM's context window.
+You can download these files and upload them via the web interface to test the system's capabilities.
 
-## ⚠️ Limitations
-- **Scaling**: While efficient, extremely large datasets (10k+ pages) may encounter index build time overhead on low-power CPUs.
-- **Local Dependencies**: Requires the Ollama service to be running locally in the background.
+## Design Decisions
 
-## 📈 Future Improvements
+- **FAISS**: Chosen for high performance and ease of local persistence. It is the standard for CPU-optimized vector search.
+- **all-MiniLM-L6-v2**: Provides a perfect balance of speed on CPU and semantic accuracy for document retrieval.
+- **phi3:mini / Llama-3.3-70b**: Phi-3 provides state-of-the-art performance for local CPU-only environments, while Llama 3.3 via Groq offers lightning-fast cloud generation.
+- **Chunk Size (800)**: Carefully balanced to provide enough context for complex legal queries while fitting within context windows.
+
+## Limitations
+
+- **Scaling**: Extremely large datasets (10k+ pages) may encounter index build time overhead on low-power CPUs during the vectorization phase.
+- **Local Dependencies**: Local mode requires the Ollama service running in the background.
+
+## Future Improvements
+
 - **Hybrid Search**: Combining semantic search with BM25 keyword matching for better technical term retrieval.
 - **Multi-Query Expansion**: Using the LLM to generate variations of user queries to overcome vocabulary mismatches.
 - **Table Support**: Enhanced parsing for complex tables in structured PDFs.

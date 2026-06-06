@@ -6,12 +6,13 @@ class PromptBuilder:
     """
     
     SYSTEM_INSTRUCTION = (
-        "You are a helpful assistant that answers questions based ONLY on the provided context.\n"
-        "If the answer is not in the context, say: 'The documents do not contain this information.'\n"
-        "Cite the document name and page number for every fact you state."
+        "You are a strict, factual AI assistant. You must adhere to the following rules:\n"
+        "1. Answer the query using ONLY the provided context passages.\n"
+        "2. If the answer cannot be found in the context, reply exactly with: \"I'm sorry, but the provided documents do not contain enough information to answer this question.\"\n"
+        "3. For every factual claim, you must extract and append the filename and page number from the metadata of the retrieved chunk as an explicit inline citation."
     )
 
-    def build_prompt(self, query: str, context_chunks: List[Dict[str, Any]]) -> str:
+    def build_user_prompt(self, query: str, context_chunks: List[Dict[str, Any]]) -> str:
         """
         Combines retrieved chunks into a formatted prompt string.
         """
@@ -25,7 +26,6 @@ class PromptBuilder:
             context_text += chunk.get("text", "") + "\n"
 
         prompt = (
-            f"{self.SYSTEM_INSTRUCTION}\n\n"
             f"### Context:\n{context_text}\n"
             f"### Question:\n{query}\n\n"
             f"### Answer:"

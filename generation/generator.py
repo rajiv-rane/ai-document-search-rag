@@ -39,10 +39,11 @@ class RAGGenerator:
             Dict containing answer, source metadata, and confidence metrics.
         """
         # 1. Build the prompt
-        prompt = self.prompt_builder.build_prompt(query, context_chunks)
+        system_prompt = self.prompt_builder.SYSTEM_INSTRUCTION
+        user_prompt = self.prompt_builder.build_user_prompt(query, context_chunks)
         
         # 2. Get response from LLM
-        answer = self.llm_client.generate_response(prompt)
+        answer = self.llm_client.generate_response(user_prompt, system_prompt=system_prompt)
         
         # 3. Extract source references (for documentation/attribution)
         sources = []
