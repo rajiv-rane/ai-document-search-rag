@@ -32,4 +32,4 @@ USER user
 EXPOSE 7860
 
 # Command to run the Streamlit application on port 7860
-ENTRYPOINT ["streamlit", "run", "ui/app.py", "--server.port=7860", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "ui/app.py", "--server.port=7860", "--server.address=0.0.0.0", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
