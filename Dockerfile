@@ -21,6 +21,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY --chown=user . /app
 
+# Ensure the non-root user has write access to runtime directories
+RUN mkdir -p /app/dataset /app/vector_store_data \
+    && chown -R user:user /app
+
 # Switch to the non-root user
 USER user
 
