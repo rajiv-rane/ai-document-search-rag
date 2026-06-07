@@ -1,3 +1,12 @@
+---
+title: AI Docs Search RAG
+emoji: 📄
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # AI-Powered Document Search & Chat (RAG)
 
 A production-grade, local Retrieval-Augmented Generation (RAG) system for querying PDF and TXT documents. Built with Ollama, FAISS, and Sentence-Transformers.
