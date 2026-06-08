@@ -9,6 +9,8 @@ pinned: false
 
 # AI-Powered Document Search & Chat (RAG)
 
+**🔗 [Live Demo Available on Hugging Face Spaces](https://huggingface.co/spaces/rajivrane203/ai-docs-search-rag)**
+
 A production-grade, local Retrieval-Augmented Generation (RAG) system for querying PDF and TXT documents. Built with Ollama, FAISS, and Sentence-Transformers.
 
 This project provides a modern Streamlit web application to easily extract grounded answers from your document collections, featuring hybrid cloud/local deployment options, strict hallucination guardrails, and real-time ingestion deduplication.
@@ -63,7 +65,14 @@ You can run the system locally using Ollama or via cloud using Groq.
    pip install -r requirements.txt
    ```
 
-### 3. Configuration (Optional)
+### 3. Docker Deployment (Optional)
+To run the containerized version of this application locally:
+```bash
+docker build -t ai-docs-search-rag .
+docker run -p 7860:7860 ai-docs-search-rag
+```
+
+### 4. Configuration (Optional)
 The system defaults to Local Mode. To use Cloud Mode for faster generation, set the following environment variables before starting the application:
 ```powershell
 # Windows
@@ -86,12 +95,13 @@ A comprehensive sample dataset containing CUAD contracts, SEC filings, and vario
 
 You can download these files and upload them via the web interface to test the system's capabilities.
 
-## Design Decisions
+## Technical Decisions & Trade-offs
 
-- **FAISS**: Chosen for high performance and ease of local persistence. It is the standard for CPU-optimized vector search.
-- **all-MiniLM-L6-v2**: Provides a perfect balance of speed on CPU and semantic accuracy for document retrieval.
-- **phi3:mini / Llama-3.3-70b**: Phi-3 provides state-of-the-art performance for local CPU-only environments, while Llama 3.3 via Groq offers lightning-fast cloud generation.
-- **Chunk Size (800)**: Carefully balanced to provide enough context for complex legal queries while fitting within context windows.
+- **FAISS vs. Managed Vector DBs**: Chose FAISS over Pinecone/Weaviate for high-performance, local persistence without external dependencies. Trade-off: Lacks built-in hybrid search without manual implementation.
+- **all-MiniLM-L6-v2**: Selected for optimal balance of speed on CPU and semantic accuracy. Trade-off: Smaller dimension (384) might miss deeply nuanced relationships compared to OpenAI embeddings, but guarantees fast local execution.
+- **Hybrid LLM Architecture (phi3:mini / Llama-3.3-70b)**: Designed an interface to hot-swap between a strict local execution (`phi3:mini` via Ollama) for privacy, and a cloud execution (`Llama-3.3` via Groq) for high-speed inference on restricted hardware like free-tier Docker containers.
+- **Rigid Guardrails & Hard Cutoffs**: Implemented a hard L2-distance cutoff (`1.25`) before querying the LLM. Trade-off: Might occasionally reject moderately relevant chunks, but strictly guarantees no context-free hallucinations and saves API tokens/compute.
+- **Chunk Size (800 / 150 overlap)**: Carefully balanced to provide enough context for complex legal queries (CUAD datasets) while fitting within the limited context windows of smaller local models.
 
 ## Limitations
 
